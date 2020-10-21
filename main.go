@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 )
 
 func hello(w http.ResponseWriter, req *http.Request) {
@@ -18,6 +20,13 @@ func headers(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/headers", headers)
 	http.ListenAndServe(":8090", nil)
