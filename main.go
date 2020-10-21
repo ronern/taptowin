@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
+	_ "github.com/heroku/x/hmetrics/onload"
 	"log"
 	"net/http"
 	"os"
@@ -27,7 +29,14 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
-	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/headers", headers)
-	http.ListenAndServe(":"+port, nil)
+	router := gin.New()
+	router.Use(gin.Logger())
+	//router.LoadHTMLGlob("templates/*.tmpl.html")
+	//router.Static("/static", "static")
+
+	router.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "HELLO", nil)
+	})
+
+	router.Run(":" + port)
 }
