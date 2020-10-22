@@ -69,7 +69,7 @@ func getInfoHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, infoJson)
+	fmt.Fprint(w, string(infoJson))
 }
 
 func registerHandler(w http.ResponseWriter, req *http.Request) {
