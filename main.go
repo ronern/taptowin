@@ -37,15 +37,12 @@ func getArg(req *http.Request, name string) string {
 }
 
 func getInfoHandler(w http.ResponseWriter, req *http.Request) {
+	id := getArg(req, "id")
 
-	ids, ok := req.URL.Query()["id"]
-
-	if !ok || len(ids[0]) < 1 {
+	if len(id) == 0 {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-
-	id := ids[0]
 
 	var info Info
 
@@ -73,19 +70,15 @@ func getInfoHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func registerHandler(w http.ResponseWriter, req *http.Request) {
-
-	var id string
-	var name string
-
-	id = getArg(req, "id")
-	name = getArg(req, "name")
+	id := getArg(req, "id")
+	name := getArg(req, "name")
 
 	if len(id) == 0 || len(name) == 0 {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
-	_, err := conn.Exec(context.Background(), "INSERT INTO users (id, name) VALUES ('$1', '$2') ON CONFLICT DO NOTHING", id, name)
+	_, err := conn.Exec(context.Background(), "INSERT INTO users (id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING", id, name)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
