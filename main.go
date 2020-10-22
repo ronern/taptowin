@@ -49,7 +49,7 @@ func getInfoHandler(w http.ResponseWriter, req *http.Request) {
 
 	var info Info
 
-	row := conn.QueryRow(context.Background(), "select energy, money, bet1, bet10, bet100, bet1000, energyTimer, energyVideoTimer from users where id=$1", id)
+	row := conn.QueryRow(context.Background(), "select energy, money, bet1, bet10, bet100, bet1000, energy_timer, energy_video_timer from users where id=$1", id)
 	err := row.Scan(&info.Energy, &info.Money, &info.Bet1, &info.Bet10, &info.Bet100, &info.Bet1000, &info.EnergyTimer, &info.EnergyVideoTimer)
 
 	if err == pgx.ErrNoRows {
