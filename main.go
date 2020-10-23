@@ -139,6 +139,41 @@ func getEnergyHandler(w http.ResponseWriter, req *http.Request) {
 
 }
 
+func getVideoEnergyHandler(w http.ResponseWriter, req *http.Request) {
+	id := getArg(req, "id")
+
+	if len(id) == 0 {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	var energyVideoTimeMs int64
+
+	row := conn.QueryRow(context.Background(), "select energy_video_timer from users where id=$1", id)
+	err := row.Scan(&energyVideoTimeMs)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	curTimeMs := time.Now().UnixNano() / 1000000
+
+	if curTimeMs >= energyVideoTimeMs {
+		newVideoEnergyTimer := curTimeMs + ENERGY_VIDEO_WAIT_MS
+		_, err := conn.Exec(context.Background(), "UPDATE users SET energy = energy + 1, energy_video_timer = $2 where id=$1", id, newVideoEnergyTimer)
+
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, "%d", newVideoEnergyTimer)
+	} else {
+		fmt.Fprintf(w, "WAIT")
+	}
+
+}
+
 func main() {
 
 	var err error
@@ -157,6 +192,8 @@ func main() {
 
 	http.HandleFunc("/info", getInfoHandler)
 	http.HandleFunc("/register", registerHandler)
+	http.HandleFunc("/getEnergy", getEnergyHandler)
+	http.HandleFunc("/getVideoEnergy", getVideoEnergyHandler)
 	http.HandleFunc("/headers", headers)
 	http.ListenAndServe(":"+port, nil)
 
