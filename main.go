@@ -18,8 +18,7 @@ const ENERGY_WAIT_MS = 15 * 60 * 1000
 const ENERGY_VIDEO_WAIT_MS = 15 * 60 * 1000
 
 type Info struct {
-	Time    int64
-	TimeUTC int64
+	Time int64
 
 	Energy int32
 	Money  float32
