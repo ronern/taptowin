@@ -14,8 +14,8 @@ import (
 
 var conn *pgx.Conn
 
-const ENERGY_WAIT_MS = 15 * 60 * 1000
-const ENERGY_VIDEO_WAIT_MS = 15 * 60 * 1000
+const ENERGY_WAIT_MS = 15 * 1 * 1000
+const ENERGY_VIDEO_WAIT_MS = 15 * 1 * 1000
 
 type Info struct {
 	Time int64
