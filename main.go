@@ -17,6 +17,11 @@ var conn *pgx.Conn
 const ENERGY_WAIT_MS = 15 * 1 * 1000
 const ENERGY_VIDEO_WAIT_MS = 15 * 1 * 1000
 
+var maxBet1 = 0
+var maxBet10 = 0
+var maxBet100 = 0
+var maxBet1000 = 0
+
 type Info struct {
 	Time int64
 
@@ -132,7 +137,7 @@ func getEnergyHandler(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, "%d", newEnergyTimer)
+		fmt.Fprintf(w, "%d", ENERGY_WAIT_MS)
 	} else {
 		fmt.Fprintf(w, "WAIT")
 	}
@@ -167,11 +172,72 @@ func getVideoEnergyHandler(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, "%d", newVideoEnergyTimer)
+		fmt.Fprintf(w, "%d", ENERGY_VIDEO_WAIT_MS)
 	} else {
 		fmt.Fprintf(w, "WAIT")
 	}
 
+}
+
+func getMaxBetHandler(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "%d %d %d %d", maxBet1, maxBet10, maxBet100, maxBet1000)
+}
+
+func bet1Handler(w http.ResponseWriter, req *http.Request) {
+	id := getArg(req, "id")
+
+	if len(id) == 0 {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	var energy int
+
+	row := conn.QueryRow(context.Background(), "SELECT energy FROM users id=$1", id)
+	err := row.Scan(&energy)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	if energy > 0 {
+
+		_, err := conn.Exec(context.Background(), "UPDATE users SET energy = energy - 1 where id=$1", id)
+
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		var bet int
+
+		row = conn.QueryRow(context.Background(), "INSERT INTO bet1 (id, bet) VALUES ($1, 1) ON CONFLICT (id) DO UPDATE SET bet = bet1.bet + 1 RETURNING bet;", id)
+		err = row.Scan(&bet)
+
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		if bet > maxBet1 {
+			maxBet1 = bet
+		}
+
+		fmt.Fprintf(w, "%d %d %d %d %d", bet, maxBet1, maxBet10, maxBet100, maxBet1000)
+
+	} else {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+}
+
+func getMaxBetDB() {
+	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet1").Scan(&maxBet1)
+	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet10").Scan(&maxBet10)
+	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet100").Scan(&maxBet100)
+	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet1000").Scan(&maxBet1000)
 }
 
 func main() {
@@ -190,10 +256,14 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
+	getMaxBetDB()
+
 	http.HandleFunc("/info", getInfoHandler)
 	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/getEnergy", getEnergyHandler)
 	http.HandleFunc("/getVideoEnergy", getVideoEnergyHandler)
+	http.HandleFunc("/getMaxBet", getMaxBetHandler)
+	http.HandleFunc("/bet1", bet1Handler)
 	http.HandleFunc("/headers", headers)
 	http.ListenAndServe(":"+port, nil)
 
