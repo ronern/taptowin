@@ -137,7 +137,7 @@ func getEnergyHandler(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, "%d", ENERGY_WAIT_MS)
+		fmt.Fprintf(w, "%d", newEnergyTimer)
 	} else {
 		fmt.Fprintf(w, "WAIT")
 	}
@@ -154,7 +154,7 @@ func getVideoEnergyHandler(w http.ResponseWriter, req *http.Request) {
 
 	var energyVideoTimeMs int64
 
-	row := conn.QueryRow(context.Background(), "select energy_video_timer from users where id=$1", id)
+	row := conn.QueryRow(context.Background(), "select energy_video_timer from users WHERE id=$1", id)
 	err := row.Scan(&energyVideoTimeMs)
 
 	if err != nil {
@@ -172,7 +172,7 @@ func getVideoEnergyHandler(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, "%d", ENERGY_VIDEO_WAIT_MS)
+		fmt.Fprintf(w, "%d", newVideoEnergyTimer)
 	} else {
 		fmt.Fprintf(w, "WAIT")
 	}
@@ -193,7 +193,7 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 
 	var energy int
 
-	row := conn.QueryRow(context.Background(), "SELECT energy FROM users id=$1", id)
+	row := conn.QueryRow(context.Background(), "SELECT energy FROM users WHERE id=$1", id)
 	err := row.Scan(&energy)
 
 	if err != nil {
