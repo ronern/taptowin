@@ -261,6 +261,61 @@ func bet1LeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 
 }
 
+func getHistoryHandler(w http.ResponseWriter, req *http.Request) {
+	rows, err := conn.Query(context.Background(), "SELECT win, time, name FROM winners LEFT JOIN users ON winners.id = users.id LIMIT 100")
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	defer rows.Close()
+
+	var resultBuf bytes.Buffer
+
+	for rows.Next() {
+		var win float32
+		var name string
+		var time int64
+		err = rows.Scan(&win, &time, &name)
+		fmt.Fprintf(&resultBuf, "%f %d %s;", win, time, name)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	fmt.Fprint(w, resultBuf.String())
+
+}
+
+func getLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
+	rows, err := conn.Query(context.Background(), "SELECT money, name FROM users ORDER BY money DESC LIMIT 100")
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	defer rows.Close()
+
+	var resultBuf bytes.Buffer
+
+	for rows.Next() {
+		var money float32
+		var name string
+		err = rows.Scan(&money, &name)
+		fmt.Fprintf(&resultBuf, "%f %s;", money, name)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	fmt.Fprint(w, resultBuf.String())
+
+}
+
 func getMaxBetDB() {
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet1").Scan(&maxBet1)
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet10").Scan(&maxBet10)
@@ -293,6 +348,8 @@ func main() {
 	http.HandleFunc("/getMaxBet", getMaxBetHandler)
 	http.HandleFunc("/bet1", bet1Handler)
 	http.HandleFunc("/bet1Leaderboard", bet1LeaderboardHandler)
+	http.HandleFunc("/getHistory", getHistoryHandler)
+	http.HandleFunc("/getLeaderboard", getLeaderboardHandler)
 	http.HandleFunc("/headers", headers)
 	http.ListenAndServe(":"+port, nil)
 
