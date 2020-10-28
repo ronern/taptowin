@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -233,6 +234,33 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 
 }
 
+func bet1LeaderboardHandler(w http.ResponseWriter, req *http.Request) {
+	rows, err := conn.Query(context.Background(), "SELECT bet, name FROM bet1 LEFT JOIN users ON bet1.id = users.id ORDER BY bet DESC LIMIT 100")
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	defer rows.Close()
+
+	var resultBuf bytes.Buffer
+
+	for rows.Next() {
+		var bet int32
+		var name string
+		err = rows.Scan(&bet, &name)
+		fmt.Fprintf(&resultBuf, "%d %s;", bet, name)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	fmt.Fprint(w, resultBuf.String())
+
+}
+
 func getMaxBetDB() {
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet1").Scan(&maxBet1)
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet10").Scan(&maxBet10)
@@ -264,6 +292,7 @@ func main() {
 	http.HandleFunc("/getVideoEnergy", getVideoEnergyHandler)
 	http.HandleFunc("/getMaxBet", getMaxBetHandler)
 	http.HandleFunc("/bet1", bet1Handler)
+	http.HandleFunc("/bet1Leaderboard", bet1LeaderboardHandler)
 	http.HandleFunc("/headers", headers)
 	http.ListenAndServe(":"+port, nil)
 
