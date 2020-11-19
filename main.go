@@ -23,11 +23,24 @@ var maxBet10 = 0
 var maxBet100 = 0
 var maxBet1000 = 0
 
+var maxBet1Players = 0
+var maxBet10Players = 0
+var maxBet100Players = 0
+var maxBet1000Players = 0
+
+var totalPlayers = 0
+var totalGames = 0
+var totalMoney = 0
+var totalEnergy = 0
+
 type Info struct {
 	Time int64
 
 	Energy int32
 	Money  float32
+
+	TotalEnergy int32
+	TotalMoney  float32
 
 	EnergyTimer      int64
 	EnergyVideoTimer int64
@@ -58,8 +71,8 @@ func getInfoHandler(w http.ResponseWriter, req *http.Request) {
 
 	var info Info
 
-	row := conn.QueryRow(context.Background(), "SELECT energy, money, energy_timer, energy_video_timer, coalesce(bet1.bet, 0), coalesce(bet10.bet, 0), coalesce(bet100.bet, 0), coalesce(bet1000.bet, 0) FROM users LEFT JOIN bet1 ON users.id = bet1.id LEFT JOIN bet10 ON users.id = bet10.id LEFT JOIN bet100 ON users.id = bet100.id LEFT JOIN bet1000 ON users.id = bet1000.id WHERE users.id=$1", id)
-	err := row.Scan(&info.Energy, &info.Money, &info.EnergyTimer, &info.EnergyVideoTimer, &info.Bet1, &info.Bet10, &info.Bet100, &info.Bet1000)
+	row := conn.QueryRow(context.Background(), "SELECT energy, money, total_energy, total_money, energy_timer, energy_video_timer, coalesce(bet1.bet, 0), coalesce(bet10.bet, 0), coalesce(bet100.bet, 0), coalesce(bet1000.bet, 0) FROM users LEFT JOIN bet1 ON users.id = bet1.id LEFT JOIN bet10 ON users.id = bet10.id LEFT JOIN bet100 ON users.id = bet100.id LEFT JOIN bet1000 ON users.id = bet1000.id WHERE users.id=$1", id)
+	err := row.Scan(&info.Energy, &info.Money, &info.TotalEnergy, &info.TotalMoney, &info.EnergyTimer, &info.EnergyVideoTimer, &info.Bet1, &info.Bet10, &info.Bet100, &info.Bet1000)
 
 	if err == pgx.ErrNoRows {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -98,7 +111,7 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
+	totalPlayers++
 	fmt.Fprint(w, "OK")
 }
 
@@ -132,12 +145,13 @@ func getEnergyHandler(w http.ResponseWriter, req *http.Request) {
 
 	if curTimeMs >= energyTimeMs {
 		newEnergyTimer := curTimeMs + ENERGY_WAIT_MS
-		_, err := conn.Exec(context.Background(), "UPDATE users SET energy = energy + 1, energy_timer = $2 where id=$1", id, newEnergyTimer)
+		_, err := conn.Exec(context.Background(), "UPDATE users SET energy = energy + 1, total_energy = total_energy + 1, energy_timer = $2 where id=$1", id, newEnergyTimer)
 
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+		totalEnergy++
 		fmt.Fprintf(w, "%d", newEnergyTimer)
 	} else {
 		fmt.Fprintf(w, "WAIT")
@@ -167,12 +181,13 @@ func getVideoEnergyHandler(w http.ResponseWriter, req *http.Request) {
 
 	if curTimeMs >= energyVideoTimeMs {
 		newVideoEnergyTimer := curTimeMs + ENERGY_VIDEO_WAIT_MS
-		_, err := conn.Exec(context.Background(), "UPDATE users SET energy = energy + 1, energy_video_timer = $2 where id=$1", id, newVideoEnergyTimer)
+		_, err := conn.Exec(context.Background(), "UPDATE users SET energy = energy + 1, total_energy = total_energy + 1, energy_video_timer = $2 where id=$1", id, newVideoEnergyTimer)
 
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+		totalEnergy++
 		fmt.Fprintf(w, "%d", newVideoEnergyTimer)
 	} else {
 		fmt.Fprintf(w, "WAIT")
@@ -181,7 +196,8 @@ func getVideoEnergyHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func getMaxBetHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "%d %d %d %d", maxBet1, maxBet10, maxBet100, maxBet1000)
+	fmt.Fprintf(w, "%d %d %d %d %d %d %d %d",
+		maxBet1, maxBet10, maxBet100, maxBet1000, maxBet1Players, maxBet10Players, maxBet100Players, maxBet1000Players)
 }
 
 func bet1Handler(w http.ResponseWriter, req *http.Request) {
@@ -223,9 +239,13 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 
 		if bet > maxBet1 {
 			maxBet1 = bet
+			maxBet1Players = 0
+		} else if bet == maxBet1 {
+			maxBet1Players++
 		}
 
-		fmt.Fprintf(w, "%d %d %d %d %d", bet, maxBet1, maxBet10, maxBet100, maxBet1000)
+		fmt.Fprintf(w, "%d %d %d %d %d %d %d %d %d",
+			bet, maxBet1, maxBet10, maxBet100, maxBet1000, maxBet1Players, maxBet10Players, maxBet100Players, maxBet1000Players)
 
 	} else {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -245,6 +265,8 @@ func bet1LeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 	defer rows.Close()
 
 	var resultBuf bytes.Buffer
+
+	fmt.Fprintf(w, "%d %d\n", maxBet1, maxBet1Players)
 
 	for rows.Next() {
 		var bet int32
@@ -272,6 +294,8 @@ func getHistoryHandler(w http.ResponseWriter, req *http.Request) {
 	defer rows.Close()
 
 	var resultBuf bytes.Buffer
+
+	fmt.Fprintf(w, "%d %d %d %d\n", totalGames, totalPlayers, totalEnergy, totalMoney)
 
 	for rows.Next() {
 		var win float32
@@ -316,11 +340,13 @@ func getLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func getMaxBetDB() {
+func getStatistics() {
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet1").Scan(&maxBet1)
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet10").Scan(&maxBet10)
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet100").Scan(&maxBet100)
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet1000").Scan(&maxBet1000)
+
+	conn.QueryRow(context.Background(), "SELECT coalesce(count(*),0), coalesce(sum(total_money),0), coalesce(sum(total_energy),0) FROM users").Scan(&totalPlayers, &totalMoney, &totalEnergy)
 }
 
 func main() {
@@ -339,7 +365,7 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
-	getMaxBetDB()
+	getStatistics()
 
 	http.HandleFunc("/info", getInfoHandler)
 	http.HandleFunc("/register", registerHandler)
