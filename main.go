@@ -341,10 +341,10 @@ func getLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func getStatistics() {
-	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet1").Scan(&maxBet1)
-	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet10").Scan(&maxBet10)
-	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet100").Scan(&maxBet100)
-	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0) FROM bet1000").Scan(&maxBet1000)
+	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0), count(*) FROM bet1 WHERE bet=(SELECT max(bet) FROM bet1)").Scan(&maxBet1, &maxBet1Players)
+	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0), count(*) FROM bet10 WHERE bet=(SELECT max(bet) FROM bet10)").Scan(&maxBet10, &maxBet10Players)
+	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0), count(*) FROM bet100 WHERE bet=(SELECT max(bet) FROM bet100)").Scan(&maxBet100, &maxBet100Players)
+	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0), count(*) FROM bet1000 WHERE bet=(SELECT max(bet) FROM bet100)").Scan(&maxBet1000, &maxBet1000Players)
 
 	conn.QueryRow(context.Background(), "SELECT coalesce(count(*),0), coalesce(sum(total_money),0), coalesce(sum(total_energy),0) FROM users").Scan(&totalPlayers, &totalMoney, &totalEnergy)
 }
