@@ -329,7 +329,7 @@ func getLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 		var energy int32
 		var money float32
 		var name string
-		err = rows.Scan(&money, &name)
+		err = rows.Scan(&energy, &money, &name)
 		fmt.Fprintf(&resultBuf, "%d %f %s;", energy, money, name)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
