@@ -314,7 +314,7 @@ func getHistoryHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func getLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
-	rows, err := conn.Query(context.Background(), "SELECT money, name FROM users ORDER BY money DESC LIMIT 100")
+	rows, err := conn.Query(context.Background(), "SELECT total_energy, total_money, name FROM users ORDER BY total_money DESC LIMIT 100")
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -326,10 +326,11 @@ func getLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 	var resultBuf bytes.Buffer
 
 	for rows.Next() {
+		var energy int32
 		var money float32
 		var name string
 		err = rows.Scan(&money, &name)
-		fmt.Fprintf(&resultBuf, "%f %s;", money, name)
+		fmt.Fprintf(&resultBuf, "%d %f %s;", energy, money, name)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
