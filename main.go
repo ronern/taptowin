@@ -65,7 +65,7 @@ func getInfoHandler(w http.ResponseWriter, req *http.Request) {
 	id := getArg(req, "id")
 
 	if len(id) == 0 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 
@@ -101,7 +101,7 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 	name := getArg(req, "name")
 
 	if len(id) == 0 || len(name) == 0 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 
@@ -127,7 +127,7 @@ func getEnergyHandler(w http.ResponseWriter, req *http.Request) {
 	id := getArg(req, "id")
 
 	if len(id) == 0 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 
@@ -163,7 +163,7 @@ func getVideoEnergyHandler(w http.ResponseWriter, req *http.Request) {
 	id := getArg(req, "id")
 
 	if len(id) == 0 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 
@@ -204,7 +204,7 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 	id := getArg(req, "id")
 
 	if len(id) == 0 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 
@@ -248,7 +248,7 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 			bet, maxBet1, maxBet10, maxBet100, maxBet1000, maxBet1Players, maxBet10Players, maxBet100Players, maxBet1000Players)
 
 	} else {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusNotAcceptable), http.StatusNotAcceptable)
 		return
 	}
 
