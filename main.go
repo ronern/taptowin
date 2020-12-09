@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -208,6 +209,18 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	game := getArg(req, "game")
+
+	if len(game) == 0 {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	if _, err := strconv.Atoi(game); err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
 	var energy int
 
 	row := conn.QueryRow(context.Background(), "SELECT energy FROM users WHERE id=$1", id)
@@ -229,7 +242,7 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 
 		var bet int
 
-		row = conn.QueryRow(context.Background(), "INSERT INTO bet1 (id, bet) VALUES ($1, 1) ON CONFLICT (id) DO UPDATE SET bet = bet1.bet + 1 RETURNING bet;", id)
+		row = conn.QueryRow(context.Background(), "INSERT INTO bet"+game+" (id, bet) VALUES ($1, 1) ON CONFLICT (id) DO UPDATE SET bet = bet"+game+".bet + 1 RETURNING bet;", id)
 		err = row.Scan(&bet)
 
 		if err != nil {
@@ -237,11 +250,34 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		if bet > maxBet1 {
-			maxBet1 = bet
-			maxBet1Players = 0
-		} else if bet == maxBet1 {
-			maxBet1Players++
+		if game == "1" {
+			if bet > maxBet1 {
+				maxBet1 = bet
+				maxBet1Players = 0
+			} else if bet == maxBet1 {
+				maxBet1Players++
+			}
+		} else if game == "10" {
+			if bet > maxBet10 {
+				maxBet10 = bet
+				maxBet10Players = 0
+			} else if bet == maxBet10 {
+				maxBet10Players++
+			}
+		} else if game == "100" {
+			if bet > maxBet100 {
+				maxBet100 = bet
+				maxBet100Players = 0
+			} else if bet == maxBet100 {
+				maxBet100Players++
+			}
+		} else if game == "1000" {
+			if bet > maxBet1000 {
+				maxBet1000 = bet
+				maxBet1000Players = 0
+			} else if bet == maxBet1000 {
+				maxBet1000Players++
+			}
 		}
 
 		fmt.Fprintf(w, "%d %d %d %d %d %d %d %d %d",
@@ -254,8 +290,20 @@ func bet1Handler(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func bet1LeaderboardHandler(w http.ResponseWriter, req *http.Request) {
-	rows, err := conn.Query(context.Background(), "SELECT bet, name FROM bet1 LEFT JOIN users ON bet1.id = users.id ORDER BY bet DESC LIMIT 100")
+func betLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
+	game := getArg(req, "game")
+
+	if len(game) == 0 {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	if _, err := strconv.Atoi(game); err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	rows, err := conn.Query(context.Background(), "SELECT bet, name FROM bet"+game+" LEFT JOIN users ON bet1.id = users.id ORDER BY bet DESC LIMIT 100")
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -374,7 +422,7 @@ func main() {
 	http.HandleFunc("/getVideoEnergy", getVideoEnergyHandler)
 	http.HandleFunc("/getMaxBet", getMaxBetHandler)
 	http.HandleFunc("/bet1", bet1Handler)
-	http.HandleFunc("/bet1Leaderboard", bet1LeaderboardHandler)
+	http.HandleFunc("/betLeaderboard", betLeaderboardHandler)
 	http.HandleFunc("/getHistory", getHistoryHandler)
 	http.HandleFunc("/getLeaderboard", getLeaderboardHandler)
 	http.HandleFunc("/headers", headers)
