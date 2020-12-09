@@ -303,7 +303,7 @@ func betLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rows, err := conn.Query(context.Background(), "SELECT bet, name FROM bet"+game+" LEFT JOIN users ON bet1.id = users.id ORDER BY bet DESC LIMIT 100")
+	rows, err := conn.Query(context.Background(), "SELECT bet, name FROM bet"+game+" LEFT JOIN users ON bet"+game+".id = users.id ORDER BY bet DESC LIMIT 100")
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
