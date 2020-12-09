@@ -314,7 +314,15 @@ func betLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 
 	var resultBuf bytes.Buffer
 
-	fmt.Fprintf(w, "%d %d\n", maxBet1, maxBet1Players)
+	if game == "1" {
+		fmt.Fprintf(w, "%d %d\n", maxBet1, maxBet1Players)
+	} else if game == "10" {
+		fmt.Fprintf(w, "%d %d\n", maxBet10, maxBet10Players)
+	} else if game == "100" {
+		fmt.Fprintf(w, "%d %d\n", maxBet100, maxBet100Players)
+	} else if game == "1000" {
+		fmt.Fprintf(w, "%d %d\n", maxBet1000, maxBet1000Players)
+	}
 
 	for rows.Next() {
 		var bet int32
