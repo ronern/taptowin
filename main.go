@@ -201,7 +201,7 @@ func getMaxBetHandler(w http.ResponseWriter, req *http.Request) {
 		maxBet1, maxBet10, maxBet100, maxBet1000, maxBet1Players, maxBet10Players, maxBet100Players, maxBet1000Players)
 }
 
-func bet1Handler(w http.ResponseWriter, req *http.Request) {
+func betHandler(w http.ResponseWriter, req *http.Request) {
 	id := getArg(req, "id")
 
 	if len(id) == 0 {
@@ -421,7 +421,7 @@ func main() {
 	http.HandleFunc("/getEnergy", getEnergyHandler)
 	http.HandleFunc("/getVideoEnergy", getVideoEnergyHandler)
 	http.HandleFunc("/getMaxBet", getMaxBetHandler)
-	http.HandleFunc("/bet1", bet1Handler)
+	http.HandleFunc("/bet", betHandler)
 	http.HandleFunc("/betLeaderboard", betLeaderboardHandler)
 	http.HandleFunc("/getHistory", getHistoryHandler)
 	http.HandleFunc("/getLeaderboard", getLeaderboardHandler)
