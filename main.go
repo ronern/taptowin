@@ -85,7 +85,7 @@ func getInfoHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	info.Time = time.Now().UnixNano() / 1000000
+	info.Time = time.Now().UTC().UnixNano() / 1000000
 
 	infoJson, err := json.Marshal(info)
 
@@ -404,6 +404,8 @@ func getStatistics() {
 	conn.QueryRow(context.Background(), "SELECT coalesce(max(bet),0), count(*) FROM bet1000 WHERE bet=(SELECT max(bet) FROM bet100)").Scan(&maxBet1000, &maxBet1000Players)
 
 	conn.QueryRow(context.Background(), "SELECT coalesce(count(*),0), coalesce(sum(total_money),0), coalesce(sum(total_energy),0) FROM users").Scan(&totalPlayers, &totalMoney, &totalEnergy)
+
+	conn.QueryRow(context.Background(), "SELECT * FROM statistics").Scan(&totalGames)
 }
 
 func main() {
