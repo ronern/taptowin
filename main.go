@@ -358,7 +358,7 @@ func getHistoryHandler(w http.ResponseWriter, req *http.Request) {
 		var name string
 		var time int64
 		err = rows.Scan(&win, &time, &name)
-		fmt.Fprintf(&resultBuf, "%f %d %s;", win, time, name)
+		fmt.Fprintf(&resultBuf, "%.2f %d %s;", win, time, name)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
@@ -386,7 +386,7 @@ func getLeaderboardHandler(w http.ResponseWriter, req *http.Request) {
 		var money float32
 		var name string
 		err = rows.Scan(&energy, &money, &name)
-		fmt.Fprintf(&resultBuf, "%d %f %s;", energy, money, name)
+		fmt.Fprintf(&resultBuf, "%d %.2f %s;", energy, money, name)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
